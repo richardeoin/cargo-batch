@@ -433,7 +433,8 @@ pub fn create_bcx<'a, 'gctx>(
             && unit_graph
                 .iter()
                 .any(|(unit, _)| unit.artifact_target_for_features.is_some());
-    if should_share_deps {
+    // cargo-batch: do this always, since we can have dupe units even if using --target.
+    if should_share_deps || true {
         // Rebuild the unit graph, replacing the explicit host targets with
         // CompileKind::Host, removing `artifact_target_for_features` and merging any dependencies
         // shared with build and artifact dependencies.

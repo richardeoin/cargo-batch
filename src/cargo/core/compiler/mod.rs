@@ -289,6 +289,8 @@ fn rustc(
     let mut output_options = OutputOptions::new(build_runner, unit);
     let package_id = unit.pkg.package_id();
     let target = Target::clone(&unit.target);
+    let features = unit.features.clone();
+    let kind = unit.kind;
     let mode = unit.mode;
 
     exec.init(build_runner, unit);
@@ -422,7 +424,7 @@ fn rustc(
                         count => format!(" due to {} previous errors", count),
                     };
                     let name = descriptive_pkg_name(&name, &target, &mode);
-                    format!("could not compile {name}{errors}{warnings}")
+                    format!("could not compile {name}{errors}{warnings}\n     target: {kind:?}\n     features: {features:?}")
                 });
 
             if let Err(e) = result {
@@ -570,6 +572,7 @@ fn link_targets(
                 paths::create_dir_all(export_dir)?;
 
                 paths::link_or_copy(src, path)?;
+                destinations.push(path.clone());
             }
         }
 
