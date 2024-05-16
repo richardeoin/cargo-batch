@@ -561,16 +561,13 @@ fn link_targets(
             if !src.exists() {
                 continue;
             }
-            let Some(dst) = output.hardlink.as_ref() else {
-                destinations.push(src.clone());
-                continue;
-            };
-            destinations.push(dst.clone());
-            paths::link_or_copy(src, dst)?;
-            if let Some(ref path) = output.export_path {
-                let export_dir = export_dir.as_ref().unwrap();
-                paths::create_dir_all(export_dir)?;
-
+            if let Some(path) = &output.hardlink {
+                paths::create_dir_all(path.parent().unwrap())?;
+                paths::link_or_copy(src, path)?;
+                destinations.push(path.clone());
+            }
+            if let Some(path) = &output.export_path {
+                paths::create_dir_all(path.parent().unwrap())?;
                 paths::link_or_copy(src, path)?;
                 destinations.push(path.clone());
             }
