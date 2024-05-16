@@ -4,14 +4,13 @@
 #![warn(clippy::redundant_clone)]
 
 use cargo::core::compiler::{
-    unit_graph, BuildContext, Context, DefaultExecutor, Executor, UnitInterner,
+    unit_graph, BuildContext, BuildRunner, DefaultExecutor, Executor, UnitInterner,
 };
 use cargo::core::shell::Shell;
 use cargo::core::Workspace;
 use cargo::ops::CompileOptions;
 use cargo::util::network::http::{http_handle, needs_custom_http_transport};
-use cargo::util::profile;
-use cargo::util::{command_prelude, CliResult, Config};
+use cargo::util::{command_prelude, CliResult, GlobalContext};
 use std::env;
 use std::sync::Arc;
 
@@ -20,7 +19,7 @@ use crate::command_prelude::*;
 fn main() {
     setup_logger();
 
-    let mut config = match Config::default() {
+    let mut config = match GlobalContext::default() {
         Ok(cfg) => cfg,
         Err(e) => {
             let mut shell = Shell::new();
@@ -36,7 +35,7 @@ fn main() {
     }
 }
 
-fn main2(config: &mut Config) -> CliResult {
+fn main2(config: &mut GlobalContext) -> CliResult {
     let args: Vec<_> = env::args().collect();
     let mut subargs = args.split(|x| *x == "---");
 
@@ -168,19 +167,20 @@ fn main2(config: &mut Config) -> CliResult {
     let bcx = merged_bcx.unwrap();
 
     if unit_graph {
-        unit_graph::emit_serialized_unit_graph(&bcx.roots, &bcx.unit_graph, bcx.ws.config())?;
+        unit_graph::emit_serialized_unit_graph(&bcx.roots, &bcx.unit_graph, bcx.ws.gctx())?;
         return Ok(());
     }
 
-    let _p = profile::start("compiling");
-    let cx = Context::new(&bcx)?;
+    // util::profile disappeared between cargo 1.76 and cargo 1.78
+    // let _p = cargo::util::profile::start("compiling");
+    let cx = BuildRunner::new(&bcx)?;
     let exec: Arc<dyn Executor> = Arc::new(DefaultExecutor);
     cx.compile(&exec)?;
 
     Ok(())
 }
 
-fn config_configure(config: &mut Config, args: &ArgMatches) -> CliResult {
+fn config_configure(config: &mut GlobalContext, args: &ArgMatches) -> CliResult {
     let arg_target_dir = &args.value_of_path("target-dir", config);
     let verbose = args.verbose();
     // quiet is unusual because it is redefined in some subcommands in order
@@ -273,7 +273,7 @@ fn setup_logger() {
 /// If the user has a non-default network configuration, then libgit2 will be
 /// configured to use libcurl instead of the built-in networking support so
 /// that those configuration settings can be used.
-fn init_git_transports(config: &Config) {
+fn init_git_transports(config: &GlobalContext) {
     match needs_custom_http_transport(config) {
         Ok(true) => {}
         _ => return,

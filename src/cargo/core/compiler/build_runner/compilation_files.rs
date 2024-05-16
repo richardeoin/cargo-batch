@@ -156,7 +156,7 @@ impl<'a, 'gctx: 'a> CompilationFiles<'a, 'gctx> {
             ws: build_runner.bcx.ws,
             host,
             target,
-            export_dir: build_runner.bcx.build_config.unit_export_dirs.clone(),
+            export_dir: build_runner.bcx.unit_export_dirs.clone(),
             roots: build_runner.bcx.roots.clone(),
             metas,
             outputs,

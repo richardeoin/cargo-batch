@@ -530,7 +530,6 @@ fn link_targets(
 ) -> CargoResult<Work> {
     let bcx = build_runner.bcx;
     let outputs = build_runner.outputs(unit)?;
-    let export_dir = build_runner.files().export_dir();
     let package_id = unit.pkg.package_id();
     let manifest_path = PathBuf::from(unit.pkg.manifest_path());
     let profile = unit.profile.clone();
